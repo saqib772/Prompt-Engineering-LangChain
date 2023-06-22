@@ -27,3 +27,12 @@ weapon_chain.run({
     "scenario": "Close-quarters combat",
     "requirements": "Stealth, high lethality"
 })
+
+#OUTPUT
+"""
+
+
+A suitable weapon for this scenario would be a suppressed submachine gun such as the MP5. 
+This weapon is lightweight and easy to maneuver in close quarters, while also providing high lethality with its 9mm rounds. 
+It also has a built-in suppressor, allowing for stealthy operations.
+"""
