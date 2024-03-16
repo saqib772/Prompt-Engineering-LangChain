@@ -1,0 +1,65 @@
+import openai
+import langchain
+from langchain.llms import OpenAI
+from langchain.chains import VectorDBStore, LLMChain, SimpleSequentialChain
+
+# Set up your OpenAI API Key
+openai.api_key = "YOUR_OPENAI_API_KEY"
+
+# Sample student data (Make sure to have comprehensive data structure)
+student_data = {
+    "Name": "Alice",
+    "Subjects": ["Math", "Science", "English"],
+    "Academic Performance": {
+        "Math": "Needs improvement in algebra",
+        "Science": "Struggles with Biology concepts",
+        "English": "Strong in writing"
+     },
+    "Learning Style": "Visual",
+    "Extracurricular Activities": ["Basketball", "Chess Club"],
+    "Objectives": "Preparing for SAT exam",
+    "Challenges": "Difficulty in understanding complex math concepts"
+}
+
+# Define a function to summarize the relevant student information 
+def summarize_student_data(data):
+    summary = f"Student Name: {data['Name']}\nSubjects: {', '.join(data['Subjects'])}\nLearning Style: {data['Learning Style']}\nObjectives: {data['Objectives']}\nChallenges: {data['Challenges']}" # Add logic to generate comprehensive summary
+    return summary
+
+# Create chains for core tasks 
+llm = OpenAI(temperature=0.7) # Adjust temperature for creativity if needed
+summary_chain = LLMChain(llm=llm, prompt=summarize_student_data)
+timetable_chain = LLMChain(llm=llm, prompt=""" 
+Based on the provided student information, design a personalized study timetable considering the following aspects:
+* **Academic Performance:** Highlight areas needing improvement and strengths.
+* **Learning Style:** Incorporate suitable study techniques (visual, auditory, kinesthetic).
+* **Extracurricular Activities:** Ensure the timetable accommodates these commitments.
+* **Objectives:** Allocate time for specific goals such as preparing for exams.
+* **Challenges:** Address any difficulties faced by the student within the timetable.
+
+Generate a study timetable detailing:
+* **Schedule:** Daily/weekly study plan.
+* **Subject Prioritization:** Allocate more time to subjects needing improvement.
+* **Study Techniques:** Include methods aligned with the student's learning style.
+* **Breaks:** Incorporate short breaks for effective studying.
+* **Goal-oriented Tasks:** Integrate tasks aimed at achieving the student's objectives.
+
+Provide a rationale for your timetable design choices.
+""")
+
+# Store student information to allow easy retrieval
+store = VectorDBStore.from_dict(student_data) 
+
+# Create the full prompt
+prompt_template = """
+{student_summary}
+"""
+
+# Execute the pipeline
+docs = store.similarity_search("Name") 
+relevant_data = docs[0].metadata
+full_prompt = prompt_template.format(student_summary=relevant_data)
+chain = SimpleSequentialChain(chains=[summary_chain, timetable_chain], input_variables=["student_summary"], store=store)
+result = chain.run(full_prompt)
+
+print(result)
